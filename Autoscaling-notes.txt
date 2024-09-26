@@ -1,0 +1,187 @@
+--------------------
+AutoScaling group:
+--------------------
+Definition:
+--------------
+-> Autoscaling is a way to automatically scale the computing resources of your application based on the load on a server farm. 
+-> It involves scaling up the resources when there is a spike or rise in web traffic and scaling down when traffic levels are low. 
+-> An autoscaling group contain a collection of EC2 instance that are treated as a logical grouping for the purpose of automatic scaling and the management.
+-> It means autoscaling group help you scale out or scale in EC2 instances to match load for your application.
+-> what is the meaning of Scale out?
+   Scale out means adding the EC2 instance.
+-> What is the meaning of Scale in?
+   Scale in means removing the EC2 instance.
+-> It also ensures that you have minimum and maximum number of EC2 instances running in the autoscaling group.
+-> It help you to monitor EC2 instance health and when it found any instance is unhealthy or terminated it will automatically create it and register it in the load balancer.
+
+-------------
+Benefits:
+-------------
+1. Better load management: 
+-> Autoscaling supports effective server load management since servers can be used during low traffic to complete non-time-sensitive computing tasks. 
+-> This is possible as autoscaling frees up significant server space with less traffic.
+
+2. Dependability:
+-> When server loads are highly erratic and unpredictable, 
+-> such as for e-commerce websites or video streaming services, 
+-> autoscaling prepares the server to handle the varying server demands, making it a dependable option.
+
+3. Fewer failures:
+-> Autoscaling services ensure that server failure instances are immediately replaced with another optimal server. 
+-> This reduces application downtime.
+
+4. Lower energy consumption:
+-> With the application of autoscaling to a website, servers will be able to go to sleep during periods of low traffic. 
+-> This significantly lowers the amount of electricity that a company uses in cases where its website is hosted on its own server infrastructure.
+
+
+---------------------
+Autoscaling Policies:
+---------------------
+
+1. Dynamic Scaling policies:
+
+-> target tracking scaling policy
+-> step scaling policy
+-> simple scaing policy
+
+2. Predictive Scaling policies
+
+3. Schedule Scaling Policy
+
+-----------------------------
+Target tracking scaling:
+-----------------------------
+
+-> Increase and decrease the current capacity of the group based on a Amazon Cloudwatch metric and a target value
+-> metrics: (predefined metrics provided by the amazon cloudwatch)
+ASGAverageCPUUtilization
+ASGAverageNetworkIn
+ASGAverageNetworkOut
+ALBRequestCountPerTarget
+
+Ex:
+Min=1, Desired Capacity=2, Max=5
+
+ASGAverageCPUUtilization = 50%
+
+----------------------
+Step scaling policy:
+----------------------
+
+-> Increase and decrease the current capacity of the group based on a set of scaling adjustments known as step adjustments.
+-> It require you to create cloudwatch alarms for the scaling policies.
+Ex:
+Min=1, Desired Capacity=1, Max=6
+
+step-1: 
+When ASGAverageCPUUtilization between 30%-40% then add 1 EC2 instance
+step-2:
+When ASGAverageCPUUtilization between 50%-60% then add 2 EC2 instance
+step-3:
+When ASGAverageCPUUtilization between 70%-80% then add 2 EC2 instance
+
+----------------
+Simple scaling:
+----------------
+
+-> Increase or decrease the current capacity of the group based on a single scaling adjustments, with a cooldown period between each scaling activity.
+-> It require you to create clouwatch alarms for the scaling policies.
+
+Ex:
+Min=1, Desired Capacity=1, Max=3
+
+When ASGAverageCPUUtilization=50% then add 2 EC2 instance
+
+------------------------------
+Predictive scaling policies:
+-------------------------------
+
+-> Predictive scaling uses machine learning to predict capacity requirements based on historical data from cloudwatch.
+
+-------------------------
+Scheduled scaling policy:
+--------------------------
+-> Scheduled scaling helps you to setup your own scaling schedule according to predictable load changes.
+
+Ex: 
+At every friday night at 9.00PM, add 5 EC2 instnaces.
+
+------------------------------
+steps-to-create-autoscaling:
+------------------------------
+step-1:
+Create two security groups (1. for ALB, 2. for ASG)
+Name: SG-for-ALB
+inbound rules:
+HTTP - 80
+Name: SG-for-ASG
+inbound rules:
+Type       protocol  Portrange   source  add sg-for-ALB
+All TCP      TCP      0-65535    custom
+
+SSH           TCP        22      anywhere   0.0.0.0/0
+
+step-2: 
+Create autoscaling group
+
+autoscaling group name: YTDemoAutoscaling
+
+Launch template:
+
+-> click on create launch template
+
+launch template name: test-template
+select os: ubuntu
+select instance type: t2.micro
+keypair: test-ec2-key-asg
+select existing security group: SG-for-ASG
+click on advanced settings
+
+go to userdata
+
+#!/bin/bash
+apt update -y
+apt install -y apache2
+systemctl start apache2
+systemctl enable apache2
+echo "hello welcome to autoscaling-server" > /var/www/html/index.html
+
+create launch template
+
+attach launch template to the autoscaling group
+
+network:
+select three availability zones
+
+
+loadblancer:
+attach to new loadbalancer option (application)
+name: YTdemo-ALB
+loadbalancer scheme: internet facing
+create new target group
+helathchecks: enable
+
+Groupsize:
+Desired capacity:1
+Minimum capacity:1
+Maximum Capacity: 2
+
+scaling policies: None
+
+Go to loadbalancer section
+
+go to security group
+
+edit security groups
+
+remove SG-for-ASG
+
+attach SG-for-ALB and then save
+
+
+
+
+
+
+
